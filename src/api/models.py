@@ -166,15 +166,3 @@ class AddGame(db.Model):
 # Relaciones
     user: Mapped["User"] = relationship("User", back_populates="add_games")
     game: Mapped["Game"] = relationship("Game", back_populates="add_games")
-
-
-
-
-
-
-
-
-
-
-
-
