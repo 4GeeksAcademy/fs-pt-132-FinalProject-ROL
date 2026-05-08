@@ -88,3 +88,15 @@ def handle_login():
     # Creamos la pulsera (Token) usando el ID del usuario
     access_token = create_access_token(identity=str(user.id))
     return jsonify({"msg": "Successful login", "token":access_token, "user_id": user.id}), 200
+
+# 3. Perfil propio(/me)
+# Requiere token JWT en el header: Authorization: Bearer <token>
+@api.route('/me', methods=['GET'])
+@jwt_required()
+def handle_me():
+    user_id = get_get_jwt_identity()
+    user = db.session.get(User, user_id)
+
+    if user is None:
+        return jsonify({"msg": "User nor found"}), 404
+    return jsonify(user.serialize()), 200

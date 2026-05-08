@@ -30,6 +30,7 @@ else:
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 MIGRATE = Migrate(app, db, compare_type=True)
+db.init_app(app)
 app.config["JWT_SECRET_KEY"] = "LOR OF THE RINGS"
 jwt = JWTManager(app)
 # add the admin
