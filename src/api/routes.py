@@ -104,7 +104,7 @@ def handle_me():
 # Devuelve todos los juegos de la base de datos.
 # No requiere autenticación — cualquiera puede ver los juegos.
 @api.route('/games', methods=['GET'])
-def handle_games()
+def handle_games():
     query = select(Game)
     games = db.session.execute(query).scalars().all()
 
