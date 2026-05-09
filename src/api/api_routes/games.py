@@ -83,6 +83,10 @@ def create_game():
     if missing:
         return jsonify({"msg": f"Missing fields: {', '.join(missing)}"}), 400
 
+    # Validar que title no esté vacío
+    if not body["title"].strip():
+        return jsonify({"msg": "Title cannot be empty"}), 400
+
     # Validar que title no sea demasiado corto
     if len(body["title"].strip()) < 3:
         return jsonify({"msg": "Title must be at least 3 characters"}), 400
