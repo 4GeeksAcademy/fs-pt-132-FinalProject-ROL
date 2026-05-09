@@ -7,8 +7,8 @@ from datetime import datetime, timezone
 
 
 # ─── Helper: calcular tier desde average rating ───
+# Convierte el promedio de votos (1-5) a una letra: S, A, B, C, D o F
 def _calcular_tier(avg):
-    """Convierte promedio (1-5) a tier: S/A/B/C/D/F"""
     if avg is None:
         return "Undefined"
     if avg >= 4.5:
@@ -24,8 +24,10 @@ def _calcular_tier(avg):
     return "F"
 
 
+# ─── Helper: recalcular GameTier ───
+# Cada vez que alguien vota, actualiza o borra su voto,
+# este helper recalcula el promedio y el tier del juego
 def _recalcular_game_tier(game_tier):
-    """Recalcula average_rating y tier desde todos los votos de usuarios"""
     votes = db.session.execute(
         select(UserGameTier).where(UserGameTier.game_tier_id == game_tier.id)
     ).scalars().all()
@@ -43,30 +45,34 @@ def _recalcular_game_tier(game_tier):
 
 
 # ═══════════════════════════════════════════
-# GAMES TIER CRUD
+# CRUD games y game tier, users game tier , user game list
 # ═══════════════════════════════════════════
-# (definidos ANTES de /games/<id> para evitar conflictos de ruta)
 
+#-----------------------------------------------------------------------
+
+# GAMES TIER
+# (van PRIMERO para que /games/tiers no choque con /games/<id>)
+
+#Read all games tier
 @api.route('/games/tiers', methods=['GET'])
 def get_game_tiers():
-    """Listar todos los tiers de juegos"""
     tiers = db.session.execute(select(GameTier)).scalars().all()
     return jsonify([t.serialize() for t in tiers]), 200
 
 
+#Read one game tier
 @api.route('/games/tiers/<int:tier_id>', methods=['GET'])
 def get_game_tier(tier_id):
-    """Obtener un tier por ID"""
     tier = db.session.get(GameTier, tier_id)
     if not tier:
         return jsonify({"msg": "Game tier not found"}), 404
     return jsonify(tier.serialize()), 200
 
 
+#Create a game tier
 @api.route('/games/tiers', methods=['POST'])
 @jwt_required()
 def create_game_tier():
-    """Crear un GameTier para un juego"""
     body = request.get_json()
     if not body or "game_id" not in body:
         return jsonify({"msg": "game_id is required"}), 400
@@ -88,10 +94,11 @@ def create_game_tier():
     return jsonify({"msg": "Game tier created", "tier": tier.serialize()}), 201
 
 
+#Update a game tier
+# Recordar calificacion models.py linea 212, del 1 al 5 puede  votar el usuario, 5 es "S", acer regla de 3
 @api.route('/games/tiers/<int:tier_id>', methods=['PUT'])
 @jwt_required()
 def update_game_tier(tier_id):
-    """Recalcular tiers desde los votos de usuarios"""
     tier = db.session.get(GameTier, tier_id)
     if not tier:
         return jsonify({"msg": "Game tier not found"}), 404
@@ -101,10 +108,10 @@ def update_game_tier(tier_id):
     return jsonify({"msg": "Game tier recalculated", "tier": tier.serialize()}), 200
 
 
+#Delete a game tier
 @api.route('/games/tiers/<int:tier_id>', methods=['DELETE'])
 @jwt_required()
 def delete_game_tier(tier_id):
-    """Eliminar un GameTier"""
     tier = db.session.get(GameTier, tier_id)
     if not tier:
         return jsonify({"msg": "Game tier not found"}), 404
@@ -115,30 +122,30 @@ def delete_game_tier(tier_id):
     return jsonify({"msg": "Game tier deleted"}), 200
 
 
-# ═══════════════════════════════════════════
-# GAMES CRUD
-# ═══════════════════════════════════════════
+#-----------------------------------------------------------------------
 
+#GAMES
+
+# Read all games
 @api.route('/games', methods=['GET'])
 def get_games():
-    """Listar todos los juegos"""
     games = db.session.execute(select(Game)).scalars().all()
     return jsonify([g.serialize() for g in games]), 200
 
 
+#Read one game
 @api.route('/games/<int:game_id>', methods=['GET'])
 def get_game(game_id):
-    """Obtener un juego por ID"""
     game = db.session.get(Game, game_id)
     if not game:
         return jsonify({"msg": "Game not found"}), 404
     return jsonify(game.serialize()), 200
 
 
+#Create a game
 @api.route('/games', methods=['POST'])
 @jwt_required()
 def create_game():
-    """Crear un nuevo juego (admin)"""
     body = request.get_json()
     if not body:
         return jsonify({"msg": "No data provided"}), 400
@@ -165,7 +172,7 @@ def create_game():
         platforms=body["platforms"]
     )
     db.session.add(game)
-    db.session.flush()  # para obtener game.id
+    db.session.flush()  # para obtener game.id antes del commit
 
     # Auto-crear GameTier asociado
     tier = GameTier(game_id=game.id)
@@ -175,10 +182,10 @@ def create_game():
     return jsonify({"msg": "Game created", "game": game.serialize()}), 201
 
 
+#Update a game
 @api.route('/games/<int:game_id>', methods=['PUT'])
 @jwt_required()
 def update_game(game_id):
-    """Actualizar un juego (admin)"""
     game = db.session.get(Game, game_id)
     if not game:
         return jsonify({"msg": "Game not found"}), 404
@@ -203,10 +210,10 @@ def update_game(game_id):
     return jsonify({"msg": "Game updated", "game": game.serialize()}), 200
 
 
+#Delete a game
 @api.route('/games/<int:game_id>', methods=['DELETE'])
 @jwt_required()
 def delete_game(game_id):
-    """Eliminar un juego (admin)"""
     game = db.session.get(Game, game_id)
     if not game:
         return jsonify({"msg": "Game not found"}), 404
@@ -217,14 +224,14 @@ def delete_game(game_id):
     return jsonify({"msg": "Game deleted"}), 200
 
 
-# ═══════════════════════════════════════════
-# USER GAME TIER CRUD (voto 1-5 del usuario)
-# ═══════════════════════════════════════════
+#----------------------------------------------------------------------
 
+#USER GAMES TIER
+
+#Read all user games tier
 @api.route('/user/game-tiers', methods=['GET'])
 @jwt_required()
 def get_user_game_tiers():
-    """Listar votos del usuario logueado"""
     user_id = get_jwt_identity()
     votes = db.session.execute(
         select(UserGameTier).where(UserGameTier.user_id == user_id)
@@ -232,10 +239,10 @@ def get_user_game_tiers():
     return jsonify([v.serialize() for v in votes]), 200
 
 
+#Read one user game tier
 @api.route('/user/game-tiers/<int:vote_id>', methods=['GET'])
 @jwt_required()
 def get_user_game_tier(vote_id):
-    """Obtener un voto específico"""
     user_id = get_jwt_identity()
     vote = db.session.execute(
         select(UserGameTier).where(
@@ -248,10 +255,10 @@ def get_user_game_tier(vote_id):
     return jsonify(vote.serialize()), 200
 
 
+#Create a user game tier (votar un juego con rating 1-5)
 @api.route('/user/game-tiers', methods=['POST'])
 @jwt_required()
 def create_user_game_tier():
-    """Votar un juego (rating 1-5)"""
     user_id = get_jwt_identity()
     body = request.get_json()
 
@@ -283,16 +290,16 @@ def create_user_game_tier():
     db.session.add(vote)
     db.session.commit()
 
-    # Recalcular el tier del juego
+    # Recalcular el tier del juego con el nuevo voto
     _recalcular_game_tier(game_tier)
 
     return jsonify({"msg": "Vote created", "vote": vote.serialize()}), 201
 
 
+#Update a user game tier (cambiar el rating)
 @api.route('/user/game-tiers/<int:vote_id>', methods=['PUT'])
 @jwt_required()
 def update_user_game_tier(vote_id):
-    """Actualizar un voto (cambiar rating)"""
     user_id = get_jwt_identity()
     vote = db.session.execute(
         select(UserGameTier).where(
@@ -322,10 +329,10 @@ def update_user_game_tier(vote_id):
     return jsonify({"msg": "Vote updated", "vote": vote.serialize()}), 200
 
 
+#Delete a user game tier
 @api.route('/user/game-tiers/<int:vote_id>', methods=['DELETE'])
 @jwt_required()
 def delete_user_game_tier(vote_id):
-    """Eliminar un voto"""
     user_id = get_jwt_identity()
     vote = db.session.execute(
         select(UserGameTier).where(
@@ -348,14 +355,14 @@ def delete_user_game_tier(vote_id):
     return jsonify({"msg": "Vote deleted"}), 200
 
 
-# ═══════════════════════════════════════════
-# USER GAME LIST CRUD (lista personal)
-# ═══════════════════════════════════════════
+#---------------------------------------------------------------------
 
+#USER GAME LIST
+
+#Read all user games list
 @api.route('/user/games', methods=['GET'])
 @jwt_required()
 def get_user_game_list():
-    """Listar juegos en la lista del usuario"""
     user_id = get_jwt_identity()
     entries = db.session.execute(
         select(UserGameList).where(UserGameList.user_id == user_id)
@@ -363,10 +370,10 @@ def get_user_game_list():
     return jsonify([e.serialize() for e in entries]), 200
 
 
+#Read one user game list
 @api.route('/user/games/<int:entry_id>', methods=['GET'])
 @jwt_required()
 def get_user_game_entry(entry_id):
-    """Obtener una entrada de la lista"""
     user_id = get_jwt_identity()
     entry = db.session.execute(
         select(UserGameList).where(
@@ -379,10 +386,10 @@ def get_user_game_entry(entry_id):
     return jsonify(entry.serialize()), 200
 
 
+#Create a user game list (agregar juego a tu lista)
 @api.route('/user/games', methods=['POST'])
 @jwt_required()
 def add_user_game():
-    """Agregar juego a la lista personal"""
     user_id = get_jwt_identity()
     body = request.get_json()
 
@@ -415,10 +422,10 @@ def add_user_game():
     return jsonify({"msg": "Game added to your list", "entry": entry.serialize()}), 201
 
 
+#Update a user game list (cambiar status, rating, review)
 @api.route('/user/games/<int:entry_id>', methods=['PUT'])
 @jwt_required()
 def update_user_game_entry(entry_id):
-    """Actualizar una entrada de la lista"""
     user_id = get_jwt_identity()
     entry = db.session.execute(
         select(UserGameList).where(
@@ -451,10 +458,10 @@ def update_user_game_entry(entry_id):
     return jsonify({"msg": "Entry updated", "entry": entry.serialize()}), 200
 
 
+#Delete a user game list
 @api.route('/user/games/<int:entry_id>', methods=['DELETE'])
 @jwt_required()
 def delete_user_game_entry(entry_id):
-    """Eliminar juego de la lista personal"""
     user_id = get_jwt_identity()
     entry = db.session.execute(
         select(UserGameList).where(
