@@ -50,80 +50,6 @@ def _recalcular_game_tier(game_tier):
 
 #-----------------------------------------------------------------------
 
-# GAMES TIER
-# (van PRIMERO para que /games/tiers no choque con /games/<id>)
-
-#Read all games tier
-@api.route('/games/tiers', methods=['GET'])
-def get_game_tiers():
-    tiers = db.session.execute(select(GameTier)).scalars().all()
-    return jsonify([t.serialize() for t in tiers]), 200
-
-
-#Read one game tier
-@api.route('/games/tiers/<int:tier_id>', methods=['GET'])
-def get_game_tier(tier_id):
-    tier = db.session.get(GameTier, tier_id)
-    if not tier:
-        return jsonify({"msg": "Game tier not found"}), 404
-    return jsonify(tier.serialize()), 200
-
-
-#Create a game tier
-@api.route('/games/tiers', methods=['POST'])
-@jwt_required()
-def create_game_tier():
-    body = request.get_json()
-    if not body or "game_id" not in body:
-        return jsonify({"msg": "game_id is required"}), 400
-
-    game = db.session.get(Game, body["game_id"])
-    if not game:
-        return jsonify({"msg": "Game not found"}), 404
-
-    existing = db.session.execute(
-        select(GameTier).where(GameTier.game_id == body["game_id"])
-    ).scalar_one_or_none()
-    if existing:
-        return jsonify({"msg": "Game tier already exists for this game"}), 400
-
-    tier = GameTier(game_id=body["game_id"])
-    db.session.add(tier)
-    db.session.commit()
-
-    return jsonify({"msg": "Game tier created", "tier": tier.serialize()}), 201
-
-
-#Update a game tier
-# Recordar calificacion models.py linea 212, del 1 al 5 puede  votar el usuario, 5 es "S", acer regla de 3
-@api.route('/games/tiers/<int:tier_id>', methods=['PUT'])
-@jwt_required()
-def update_game_tier(tier_id):
-    tier = db.session.get(GameTier, tier_id)
-    if not tier:
-        return jsonify({"msg": "Game tier not found"}), 404
-
-    _recalcular_game_tier(tier)
-
-    return jsonify({"msg": "Game tier recalculated", "tier": tier.serialize()}), 200
-
-
-#Delete a game tier
-@api.route('/games/tiers/<int:tier_id>', methods=['DELETE'])
-@jwt_required()
-def delete_game_tier(tier_id):
-    tier = db.session.get(GameTier, tier_id)
-    if not tier:
-        return jsonify({"msg": "Game tier not found"}), 404
-
-    db.session.delete(tier)
-    db.session.commit()
-
-    return jsonify({"msg": "Game tier deleted"}), 200
-
-
-#-----------------------------------------------------------------------
-
 #GAMES
 
 # Read all games
@@ -222,6 +148,79 @@ def delete_game(game_id):
     db.session.commit()
 
     return jsonify({"msg": "Game deleted"}), 200
+
+
+#-----------------------------------------------------------------------
+
+# GAMES TIER
+
+#Read all games tier
+@api.route('/games/tiers', methods=['GET'])
+def get_game_tiers():
+    tiers = db.session.execute(select(GameTier)).scalars().all()
+    return jsonify([t.serialize() for t in tiers]), 200
+
+
+#Read one game tier
+@api.route('/games/tiers/<int:tier_id>', methods=['GET'])
+def get_game_tier(tier_id):
+    tier = db.session.get(GameTier, tier_id)
+    if not tier:
+        return jsonify({"msg": "Game tier not found"}), 404
+    return jsonify(tier.serialize()), 200
+
+
+#Create a game tier
+@api.route('/games/tiers', methods=['POST'])
+@jwt_required()
+def create_game_tier():
+    body = request.get_json()
+    if not body or "game_id" not in body:
+        return jsonify({"msg": "game_id is required"}), 400
+
+    game = db.session.get(Game, body["game_id"])
+    if not game:
+        return jsonify({"msg": "Game not found"}), 404
+
+    existing = db.session.execute(
+        select(GameTier).where(GameTier.game_id == body["game_id"])
+    ).scalar_one_or_none()
+    if existing:
+        return jsonify({"msg": "Game tier already exists for this game"}), 400
+
+    tier = GameTier(game_id=body["game_id"])
+    db.session.add(tier)
+    db.session.commit()
+
+    return jsonify({"msg": "Game tier created", "tier": tier.serialize()}), 201
+
+
+#Update a game tier
+# Recordar calificacion models.py linea 212, del 1 al 5 puede  votar el usuario, 5 es "S", acer regla de 3
+@api.route('/games/tiers/<int:tier_id>', methods=['PUT'])
+@jwt_required()
+def update_game_tier(tier_id):
+    tier = db.session.get(GameTier, tier_id)
+    if not tier:
+        return jsonify({"msg": "Game tier not found"}), 404
+
+    _recalcular_game_tier(tier)
+
+    return jsonify({"msg": "Game tier recalculated", "tier": tier.serialize()}), 200
+
+
+#Delete a game tier
+@api.route('/games/tiers/<int:tier_id>', methods=['DELETE'])
+@jwt_required()
+def delete_game_tier(tier_id):
+    tier = db.session.get(GameTier, tier_id)
+    if not tier:
+        return jsonify({"msg": "Game tier not found"}), 404
+
+    db.session.delete(tier)
+    db.session.commit()
+
+    return jsonify({"msg": "Game tier deleted"}), 200
 
 
 #----------------------------------------------------------------------
