@@ -83,13 +83,22 @@ def create_game():
     if missing:
         return jsonify({"msg": f"Missing fields: {', '.join(missing)}"}), 400
 
-    # Validar que title no esté vacío
-    if not body["title"].strip():
-        return jsonify({"msg": "Title cannot be empty"}), 400
+    # Validar campos de texto (vacío + mínimo)
+    text_fields = {
+        "title": 3,
+        "developer": 2,
+        "publisher": 2
+    }
+    for field, min_len in text_fields.items():
+        if not body[field].strip():
+            return jsonify({"msg": f"{field.capitalize()} cannot be empty"}), 400
+        if len(body[field].strip()) < min_len:
+            return jsonify({"msg": f"{field.capitalize()} must be at least {min_len} characters"}), 400
 
-    # Validar que title no sea demasiado corto
-    if len(body["title"].strip()) < 3:
-        return jsonify({"msg": "Title must be at least 3 characters"}), 400
+    if not body["description"].strip():
+        return jsonify({"msg": "Description cannot be empty"}), 400
+    if len(body["description"].strip()) < 10:
+        return jsonify({"msg": "Description must be at least 10 characters"}), 400
 
     # Validar que genres y platforms sean listas
     if not isinstance(body["genres"], list) or len(body["genres"]) == 0:
