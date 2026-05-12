@@ -74,7 +74,7 @@ class Game(db.Model):
     user_surveys: Mapped[List["UserSurvey"]] = relationship("UserSurvey", back_populates="game")
     game_lists: Mapped[List["UserGameList"]] = relationship("UserGameList", back_populates="game")
     comments: Mapped[List["Comment"]] = relationship("Comment", back_populates="game")
-    game_tier: Mapped["GameTier"] = relationship("GameTier", back_populates="game", uselist=False)
+    game_tier: Mapped["GameTier"] = relationship("GameTier", back_populates="game", uselist=False, cascade="all, delete-orphan")
     favorites: Mapped[List["Favorite"]] = relationship("Favorite", back_populates="game")
     add_games: Mapped[List["AddGame"]] = relationship("AddGame", back_populates="game")
 
