@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import String, Boolean, DateTime, Date, Text, Enum, ForeignKey, JSON, ARRAY, select, func
+from sqlalchemy import String, Boolean, DateTime, Date, Text, Enum, ForeignKey, JSON, ARRAY, select, func, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship 
 from datetime import datetime, timezone
 from typing import List, Optional
@@ -122,7 +122,7 @@ class Profile(db.Model):
             "redes": self.redes,
             "avatar_url": self.avatar_url,
         }
-
+# si se añade mas requistos se tiene que poner aqui mas tambien
 class UserSurvey(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('user.id'), nullable=False)
@@ -256,6 +256,7 @@ class UserGameTier(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     game_tier_id: Mapped[int] = mapped_column(ForeignKey('game_tier.id'), nullable=False)
     user_id: Mapped[int] = mapped_column(ForeignKey('user.id'), nullable=False)
+    rating: Mapped[int] = mapped_column(Integer,nullable=False)
     __table_args__ = (db.UniqueConstraint('game_tier_id', 'user_id'),)
 
     # Relaciones
