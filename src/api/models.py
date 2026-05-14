@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import String, Boolean, DateTime, Date, Text, Enum, ForeignKey, JSON, ARRAY,Integer
+from sqlalchemy import String, Boolean, DateTime, Date, Text, Enum, ForeignKey, JSON, ARRAY, select, func, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship 
 from datetime import datetime, timezone
 from typing import List, Optional
@@ -24,7 +24,6 @@ class User(db.Model):
     surveys: Mapped[List["UserSurvey"]] = relationship("UserSurvey", back_populates="user")
     game_lists: Mapped[List["UserGameList"]] = relationship("UserGameList", back_populates="user")
     comments: Mapped[List["Comment"]] = relationship("Comment", back_populates="user")
-    favorites: Mapped[List["Favorite"]] = relationship("Favorite", back_populates="user")
     bans_given: Mapped[List["Ban"]] = relationship("Ban", foreign_keys="Ban.admin_id", back_populates="admin")
     bans_received: Mapped[List["Ban"]] = relationship("Ban", foreign_keys="Ban.user_id", back_populates="user")
     add_games: Mapped[List["AddGame"]] = relationship("AddGame", back_populates="user")
@@ -42,7 +41,6 @@ class User(db.Model):
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
             "profile": self.profile.serialize() if self.profile else None,
-            "favorites": [favorite.game_id for favorite in self.favorites],
             "game_lists": [game_list.serialize() for game_list in self.game_lists],  # ← Mejorado
         
             # do not serialize the password, its a security breach
@@ -75,8 +73,18 @@ class Game(db.Model):
     user_glgs: Mapped[List["UserGLG"]] = relationship("UserGLG", back_populates="game")
     comments: Mapped[List["Comment"]] = relationship("Comment", back_populates="game")
     game_tier: Mapped["GameTier"] = relationship("GameTier", back_populates="game", uselist=False, cascade="all, delete-orphan")
-    favorites: Mapped[List["Favorite"]] = relationship("Favorite", back_populates="game")
     add_games: Mapped[List["AddGame"]] = relationship("AddGame", back_populates="game")
+
+    def get_favorites(self):
+        game_id=self.id
+        
+        favorites = db.session.execute(
+            select(func.count()).where(
+            UserGLG.game_id == game_id, 
+            UserGLG.is_favorite == True
+        )).scalar()
+        
+        return favorites
 
     #Serialize
     def serialize(self):
@@ -93,7 +101,7 @@ class Game(db.Model):
             "created_at": self.created_at.isoformat(),
             "game_tier": self.game_tier.serialize() if self.game_tier else None,
             "comment_count": len(self.comments),
-            "favorite_count": len(self.favorites),
+            "favorite_count": self.get_favorites(),
         }
 
 class Profile(db.Model):
@@ -169,6 +177,7 @@ class UserGLG(db.Model):
     review: Mapped[str] = mapped_column(Text, default="no review", nullable=False)
     added_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    is_favorite: Mapped[bool] = mapped_column(Boolean(), default=False, nullable=False)
 
     #Relaciones
     game: Mapped["Game"] = relationship("Game", back_populates="user_glgs")
@@ -262,25 +271,6 @@ class UserGameTier(db.Model):
             "username": self.user.username if self.user else None,
         }
 
-class Favorite(db.Model):
-    id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey('user.id'), nullable=False)
-    game_id: Mapped[int] = mapped_column(ForeignKey('game.id'), nullable=False)
-    __table_args__ = (db.UniqueConstraint('user_id', 'game_id'),)
-
-    # Relaciones
-    user: Mapped["User"] = relationship("User", back_populates="favorites")
-    game: Mapped["Game"] = relationship("Game", back_populates="favorites")
-
-    #Serialize
-    def serialize(self):
-        return {
-            "id": self.id,
-            "user_id": self.user_id,
-            "game_id": self.game_id,
-            "game_title": self.game.title if self.game else None,
-            "game_cover": self.game.cover_img_url if self.game else None,
-        }
 
 class Ban(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
