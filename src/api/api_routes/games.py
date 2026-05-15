@@ -1,7 +1,7 @@
 from api.routes import api
 from flask import request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from api.models import db, Game, GameTier, UserGameTier, UserGameList, User
+from api.models import db, Game, GameTier, UserGameTier, UserGameList, User, UserGLG
 from sqlalchemy import select
 from datetime import datetime, timezone
 
@@ -32,7 +32,7 @@ def check_admin(user_id):
     
     is_admin = user.is_admin
     if not is_admin:        
-        return jsonify({"msg": "Only admin can Update a game"}), 400
+        return jsonify({"msg": "Admin access required"}), 400
     return None
 
 # ─── recalcular GameTier ───
@@ -452,25 +452,27 @@ def delete_user_game_tier(game_id):
 
 #USER GAME LIST
 
-#Read all user games list
-@api.route('/user/games', methods=['GET'])
+#Read all user games list (solo admin)
+@api.route('/user/game-list/all', methods=['GET'])
 @jwt_required()
 def get_user_game_list():
     user_id = get_jwt_identity()
+    error = check_admin(user_id)  
+    if error:
+        return error
     entries = db.session.execute(
-        select(UserGameList).where(UserGameList.user_id == user_id)
+        select(UserGameList)
     ).scalars().all()
     return jsonify([e.serialize() for e in entries]), 200
 
 
 #Read one user game list
-@api.route('/user/games/<int:entry_id>', methods=['GET'])
+@api.route('/user/game-list', methods=['GET'])
 @jwt_required()
-def get_user_game_entry(entry_id):
+def get_user_game_entry():
     user_id = get_jwt_identity()
     entry = db.session.execute(
         select(UserGameList).where(
-            UserGameList.id == entry_id,
             UserGameList.user_id == user_id
         )
     ).scalar_one_or_none()
@@ -480,9 +482,9 @@ def get_user_game_entry(entry_id):
 
 
 #Create a user game list (agregar juego a tu lista)
-@api.route('/user/games', methods=['POST'])
+@api.route('/user/glg', methods=['POST'])
 @jwt_required()
-def add_user_game():
+def add_user_glg():
     user_id = get_jwt_identity()
     body = request.get_json()
 
@@ -492,16 +494,23 @@ def add_user_game():
     game = db.session.get(Game, body["game_id"])
     if not game:
         return jsonify({"msg": "Game not found"}), 404
-
+    
+    # Obtener el UserGameList del usuario (se crea en signup)
+    ugl = db.session.execute(
+        select(UserGameList).where(UserGameList.user_id == user_id)
+    ).scalar_one_or_none()
+    if not ugl:
+        return jsonify({"msg": "User game list not found. Please signup first."}), 404
+    
+    # Verificar que el juego no esté ya en la lista via UserGLG
     existing = db.session.execute(
-        select(UserGameList).where(
-            UserGameList.user_id == user_id,
-            UserGameList.game_id == body["game_id"]
+        select(UserGLG).where(
+            UserGLG.ugl_id == ugl.id,
+            UserGLG.game_id == body["game_id"]
         )
     ).scalar_one_or_none()
     if existing:
         return jsonify({"msg": "Game already in your list"}), 400
-
     status = body.get("status", "want_to_play")
     valid_statuses = ["want_to_play", "playing", "completed", "dropped"]
     if status not in valid_statuses:
@@ -512,38 +521,29 @@ def add_user_game():
     if rating is not None and (not isinstance(rating, int) or rating < 1 or rating > 5):
         return jsonify({"msg": "Rating must be an integer between 1 and 5"}), 400
 
-    entry = UserGameList(
-        user_id=user_id,
+    entry = UserGLG(                         
         game_id=body["game_id"],
+        ugl_id=ugl.id,                       
         status=status,
         rating=rating if rating is not None else 0,
         review=body.get("review", "no review")
     )
     db.session.add(entry)
     db.session.commit()
-
     return jsonify({"msg": "Game added to your list", "entry": entry.serialize()}), 201
 
 
-#Update a user game list (cambiar status, rating, review)
+#Update a user game entry (cambiar status, rating, review en UserGLG)
 @api.route('/user/games/<int:entry_id>', methods=['PUT'])
 @jwt_required()
 def update_user_game_entry(entry_id):
     user_id = get_jwt_identity()
-    entry = db.session.execute(
-        select(UserGameList).where(
-            UserGameList.id == entry_id,
-            UserGameList.user_id == user_id
-        )
-    ).scalar_one_or_none()
-
-    if not entry:
+    entry = db.session.get(UserGLG, entry_id)
+    if not entry or entry.ugl.user_id != user_id:
         return jsonify({"msg": "Entry not found"}), 404
-
     body = request.get_json()
     if not body:
         return jsonify({"msg": "No data provided"}), 400
-
     valid_statuses = ["want_to_play", "playing", "completed", "dropped"]
     if "status" in body:
         if body["status"] not in valid_statuses:
@@ -553,7 +553,6 @@ def update_user_game_entry(entry_id):
             entry.completed_at = datetime.now(timezone.utc)
         else:
             entry.completed_at = None
-
     if "rating" in body:
         rating = body["rating"]
         if not isinstance(rating, int) or rating < 1 or rating > 5:
@@ -561,27 +560,18 @@ def update_user_game_entry(entry_id):
         entry.rating = rating
     if "review" in body:
         entry.review = body["review"]
-
     db.session.commit()
     return jsonify({"msg": "Entry updated", "entry": entry.serialize()}), 200
 
 
-#Delete a user game list
+#Delete a user game entry (UserGLG)
 @api.route('/user/games/<int:entry_id>', methods=['DELETE'])
 @jwt_required()
 def delete_user_game_entry(entry_id):
     user_id = get_jwt_identity()
-    entry = db.session.execute(
-        select(UserGameList).where(
-            UserGameList.id == entry_id,
-            UserGameList.user_id == user_id
-        )
-    ).scalar_one_or_none()
-
-    if not entry:
+    entry = db.session.get(UserGLG, entry_id)
+    if not entry or entry.ugl.user_id != user_id:
         return jsonify({"msg": "Entry not found"}), 404
-
     db.session.delete(entry)
     db.session.commit()
-
     return jsonify({"msg": "Entry deleted"}), 200
