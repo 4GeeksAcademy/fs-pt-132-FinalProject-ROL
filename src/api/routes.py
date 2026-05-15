@@ -69,11 +69,13 @@ def handle_signup():
     password_hash= bcrypt.generate_password_hash(password).decode('utf-8')
 
     user = User(username=username, email=email, password_hash=password_hash)
-
+    #Cuano se crea el  usuario, se debe de crear profile y user game list aun que esten vacios
     db.session.add(user)
     db.session.commit()
     return jsonify({"msg": "Successfully created user",
                     "user": user.serialize()}), 201
+
+
 
 # Login
 
