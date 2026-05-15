@@ -2,7 +2,7 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 from flask import Flask, request, jsonify, url_for, Blueprint
-from api.models import db, User
+from api.models import db, User, Profile, UserGameList
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
@@ -71,14 +71,24 @@ def handle_signup():
     user = User(username=username, email=email, password_hash=password_hash)
     #Cuano se crea el  usuario, se debe de crear profile y user game list aun que esten vacios
     db.session.add(user)
+    db.session.flush()  # ← necesario para obtener user.id antes del commit
+
+    #crear profile vacio al crear user
+    profile= Profile(
+        user_id=user.id,
+        description="No description",
+        avatar_url="imgurl"
+    )
+
+    #crear gamelist vacia al crear user
+    game_list = UserGameList(user_id=user.id)
+    db.session.add(profile)
+    db.session.add(game_list)
     db.session.commit()
     return jsonify({"msg": "Successfully created user",
                     "user": user.serialize()}), 201
 
-
-
 # Login
-
 
 @api.route('/login', methods=['POST'])
 def handle_login():
@@ -126,67 +136,3 @@ def handle_private():
         return jsonify({"msg": "User not found","success":False}), 404
     return jsonify({"msg":"User authenticated successfully", "success":True, "user_id":user.id}), 200
 
-
-# # 4 Listar Juegos(/games)
-# # Devuelve todos los juegos de la base de datos.
-# # No requiere autenticación — cualquiera puede ver los juegos.
-
-
-# @api.route('/games', methods=['GET'])
-# def handle_games():
-#     query = select(Game)
-#     games = db.session.execute(query).scalars().all()
-
-#     # Convertimos cada objeto Game a JSON usando su método serialize()
-#     return jsonify([game.serialize() for game in games]), 200
-
-# # 5 Detalles de juegos(/games/<id>)
-# # Devuelve un solo juego por su ID.
-
-
-# @api.route('/game/<int:game_id>', methods=['GET'])
-# def handle_game(game_id):
-#     # db.session.get() busca por primary key
-#     game = db.session.get(Game, game_id)
-
-#     if game is None:
-#         return jsonify({"msg": "Game not found"}), 404
-
-#     return jsonify(game.serialize()), 200
-
-# # 6 Agregar Juegos a Lista (Post / user/ games)
-# # El usuario logueado agrega un juego a su lista personal.
-
-
-# @api.route('/user/game', methods=['POST'])
-# @jwt_required()
-# def handle_add_user_game():
-#     user_id = get_jwt_identity()
-#     body = request.get_json()
-
-#     if body is None or "game_id" not in body:
-#         return jsonify({"msg": "Game_id is requiered"})
-
-#     game_id = body.get("game_id")
-#     status = body.get("status", "want_to_play")
-#     rating = body.get("rating", 0)
-#     review = body.get("review", "")
-# # Verificar que el juego existe
-#     game = db.session.get(Game, game_id)
-#     if game is None:
-#         return jsonify({"msg": "Game no found"}), 404
-# # Verificamos que no lo tenga ya en su lista
-#     existing = db.session.execute(
-#         select(UserGameList).where(UserGameList.user_id == user_id,
-#                                    UserGameList.game_id == game_id)
-#     ).scalar_one_or_none()
-#     if existing:
-#         return jsonify({"msg": "GAme already in your list"}), 400
-#     entry = UserGameList(
-#         user_id=user_id, game_id=game_id,
-#         status=status, rating=rating, review=review
-#     )
-#     db.session.add(entry)
-#     db.session.commit()
-
-#     return jsonify({"msg": "Game added to your list", "entry": entry.serialize()}), 201
