@@ -51,3 +51,32 @@ def update_addgame_status(addgame_id):
     add_game = body["status"]
 
     #Have to create a code for working only if aproved to add the game successfuly
+
+    if body["status"] == "approved":
+        data = add_game.body
+        if add_game.creator:
+
+            new_game = Game(
+                title=data["title"],
+                description=data["description"],
+                release_date=datetime.fromisoformat(data["release_date"]),
+                developer=data["developer"],
+                publisher=data["publisher"],
+                cover_img_url=data["cover_img_url"],
+                genres=data["genres"],
+                platforms=data["platforms"]
+            )
+            db.session.add(new_game)
+
+        elif add_game.update:
+
+            game = db.session.get(Game, add_game.game_id)
+
+            if not game:
+                return jsonify({"msg": "Game not found", "success": False}), 404
+            
+            for key, value in data.items():
+                setattr(game, key, value)
+
+    db.session.commit()
+    return jsonify({"msg": f'Submission {body["status"]}, "success": True, "submission": add_game.serialize()'}), 200
