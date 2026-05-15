@@ -450,9 +450,9 @@ def delete_user_game_tier(game_id):
 
 #---------------------------------------------------------------------
 
-#USER GAME LIST
+#USER GAME LIST → UserGameList (contenedor) + UserGLG (juegos)
 
-#Read all user games list (solo admin)
+#Read all user game lists (solo admin)
 @api.route('/user/game-list/all', methods=['GET'])
 @jwt_required()
 def get_user_game_list():
@@ -466,7 +466,7 @@ def get_user_game_list():
     return jsonify([e.serialize() for e in entries]), 200
 
 
-#Read one user game list
+#Read own user game list
 @api.route('/user/game-list', methods=['GET'])
 @jwt_required()
 def get_user_game_entry():
@@ -481,7 +481,7 @@ def get_user_game_entry():
     return jsonify(entry.serialize()), 200
 
 
-#Create a user game list (agregar juego a tu lista)
+#Create a user game list (agregar juego a tu lista via UserGLG)
 @api.route('/user/glg', methods=['POST'])
 @jwt_required()
 def add_user_glg():
@@ -494,14 +494,14 @@ def add_user_glg():
     game = db.session.get(Game, body["game_id"])
     if not game:
         return jsonify({"msg": "Game not found"}), 404
-    
+
     # Obtener el UserGameList del usuario (se crea en signup)
     ugl = db.session.execute(
         select(UserGameList).where(UserGameList.user_id == user_id)
     ).scalar_one_or_none()
     if not ugl:
         return jsonify({"msg": "User game list not found. Please signup first."}), 404
-    
+
     # Verificar que el juego no esté ya en la lista via UserGLG
     existing = db.session.execute(
         select(UserGLG).where(
@@ -521,9 +521,9 @@ def add_user_glg():
     if rating is not None and (not isinstance(rating, int) or rating < 1 or rating > 5):
         return jsonify({"msg": "Rating must be an integer between 1 and 5"}), 400
 
-    entry = UserGLG(                         
+    entry = UserGLG(
         game_id=body["game_id"],
-        ugl_id=ugl.id,                       
+        ugl_id=ugl.id,
         status=status,
         rating=rating if rating is not None else 0,
         review=body.get("review", "no review")

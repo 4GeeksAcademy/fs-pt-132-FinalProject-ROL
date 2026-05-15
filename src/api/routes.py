@@ -2,7 +2,7 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 from flask import Flask, request, jsonify, url_for, Blueprint
-from api.models import db, User
+from api.models import db, User, UserGameList
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
@@ -70,8 +70,14 @@ def handle_signup():
     password_hash= bcrypt.generate_password_hash(password).decode('utf-8')
 
     user = User(username=username, email=email, password_hash=password_hash)
-    #Cuano se crea el  usuario, se debe de crear profile y user game list aun que esten vacios
+    #Cuando se crea el usuario, se debe de crear profile y user game list aunque esten vacios
     db.session.add(user)
+    db.session.flush()  # para obtener user.id antes del commit
+
+    # Crear UserGameList vacío para el usuario
+    game_list = UserGameList(user_id=user.id)
+    db.session.add(game_list)
+
     db.session.commit()
     return jsonify({"msg": "Successfully created user",
                     "user": user.serialize()}), 201
