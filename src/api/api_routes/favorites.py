@@ -16,7 +16,7 @@ def change_favorite():
     if not game_id: 
         return jsonify({"msg": "game_id is a required field", "success": False}), 400
     
-    game= db.session.get(Game, game_id).scalar_one_or_none()
+    game= db.session.get(Game, game_id)
     if not game:
         return jsonify({"msg": "game not found"}), 404
     
