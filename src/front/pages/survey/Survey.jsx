@@ -226,7 +226,7 @@ export const Survey = () => {
                 onClick={handleSubmit}
                 disabled={submitting || !playStyle}
               >
-                {submitting ? "Enviando..." : "Descubrir juegos &rarr;"}
+                {submitting ? "Enviando..." : "Descubrir juegos →"}
               </button>
             )}
           </div>
