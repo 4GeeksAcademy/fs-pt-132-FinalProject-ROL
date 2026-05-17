@@ -162,7 +162,7 @@ export const Profile = () => {
                 return (
                   <div key={game.id || entry.id} className="col-md-6 col-lg-4">
                     <div className="card h-100 shadow-sm">
-                      <Link to={`/games/${game.id}`} className="text-decoration-none">
+                      <Link to={`/game-detail/${game.id}`} className="text-decoration-none">
                         <div
                           className="card-img-top d-flex align-items-center justify-content-center bg-light"
                           style={{ height: "160px", overflow: "hidden" }}
@@ -187,7 +187,7 @@ export const Profile = () => {
                       </Link>
                       <div className="card-body">
                         <Link
-                          to={`/games/${game.id}`}
+                          to={`/game-detail/${game.id}`}
                           className="text-decoration-none text-dark"
                         >
                           <h5 className="card-title">{game.title}</h5>

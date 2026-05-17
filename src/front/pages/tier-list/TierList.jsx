@@ -214,7 +214,7 @@ export const TierList = () => {
                   <tr key={game.id} className="tier-list__tr">
                     <td className="tier-list__td">
                       <Link
-                        to={`/games/${game.id}`}
+                        to={`/game-detail/${game.id}`}
                         className="tier-list__link"
                       >
                         {game.title}
@@ -272,7 +272,7 @@ export const TierList = () => {
                     {tierGames.map((game) => (
                       <Link
                         key={game.id}
-                        to={`/games/${game.id}`}
+                        to={`/game-detail/${game.id}`}
                         className="tier-row__card"
                       >
                         <img

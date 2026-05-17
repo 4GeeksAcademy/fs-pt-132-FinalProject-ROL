@@ -113,7 +113,7 @@ export const Home = () => {
   const GameCardItem = ({ game }) => (
     <div className="col-md-6 col-lg-3">
       <div className="card h-100 shadow-sm">
-        <Link to={`/games/${game.id}`} className="text-decoration-none">
+        <Link to={`/game-detail/${game.id}`} className="text-decoration-none">
           <div
             className="bg-light d-flex align-items-center justify-content-center"
             style={{ height: "200px", overflow: "hidden" }}
@@ -144,7 +144,7 @@ export const Home = () => {
         </Link>
         <div className="card-body">
           <Link
-            to={`/games/${game.id}`}
+            to={`/game-detail/${game.id}`}
             className="text-decoration-none text-dark"
           >
             <h5 className="card-title">{game.title}</h5>

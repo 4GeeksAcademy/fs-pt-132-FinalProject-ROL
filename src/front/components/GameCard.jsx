@@ -57,7 +57,7 @@ export const GameCard = ({ game }) => {
   const description = game.description || game.summary || "";
 
   return (
-    <Link to={`/games/${game.id}`} className="game-card-link">
+    <Link to={`/game-detail/${game.id}`} className="game-card-link">
       <div className="game-card">
         <div className="game-card__cover">
           {!imgError ? (

@@ -16,9 +16,12 @@ export const initialStore = () => {
     ],
 
     // ─── 👇 AGREGADO para auth (Login / Signup / Profile) ───
-    user: null, // datos del usuario: { id, username, email }
-    token: null, // JWT para autenticar peticiones
-    isAuthenticated: false, // true si hay sesión activa
+    user: null,
+    token: null,
+    isAuthenticated: false,
+
+    // ─── Juegos ───
+    games: [],
   };
 };
 
@@ -40,8 +43,11 @@ export default function storeReducer(store, action = {}) {
         ),
       };
 
-    // ─── 👇 AGREGADO para auth ───
+    // ─── Juegos ───
+    case "set_games":
+      return { ...store, games: action.payload };
 
+    // ─── 👇 AGREGADO para auth ───
     // Después de login exitoso: guarda user + token en el store
     case "set_auth":
       return {
