@@ -88,7 +88,10 @@ export const Survey = () => {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Error al enviar la encuesta");
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error(body || `Error ${res.status}`);
+      }
 
       navigate("/?survey=done");
     } catch (err) {
