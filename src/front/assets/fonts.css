@@ -1,0 +1,11 @@
+/* ═══════════════════════════════════════════
+   Game-Side Custom Font — GAME_glm
+   ═══════════════════════════════════════════ */
+
+@font-face {
+  font-family: "GAME_glm";
+  src: url("./GAME_glm.ttf") format("truetype");
+  font-display: swap;
+  font-weight: normal;
+  font-style: normal;
+}

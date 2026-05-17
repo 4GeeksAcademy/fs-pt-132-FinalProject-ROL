@@ -1,0 +1,243 @@
+/* ═══════════════════════════════════════
+   Survey / Personalization Page
+   ═══════════════════════════════════════ */
+
+.survey {
+  min-height: calc(100vh - 140px);
+  background: var(--color-bg);
+}
+
+.survey__inner {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: var(--space-2xl) var(--space-lg);
+}
+
+/* ── Header ── */
+
+.survey__header {
+  text-align: center;
+  margin-bottom: var(--space-xl);
+}
+
+.survey__title {
+  font-family: var(--font-display);
+  font-size: var(--font-size-3xl);
+  color: var(--color-text);
+  margin: 0 0 var(--space-sm);
+  line-height: 1.2;
+}
+
+.survey__subtitle {
+  font-size: var(--font-size-base);
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-lg);
+}
+
+/* ── Progress ── */
+
+.survey__progress {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  background: var(--color-surface);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: var(--space-sm);
+}
+
+.survey__progress-bar {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.survey__progress-text {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* ── Card ── */
+
+.survey__card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2xl);
+  box-shadow: var(--shadow-md);
+}
+
+/* ── Error ── */
+
+.survey__error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: var(--font-size-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  margin-bottom: var(--space-lg);
+}
+
+/* ── Steps ── */
+
+.survey__step-title {
+  font-family: var(--font-display);
+  font-size: var(--font-size-xl);
+  color: var(--color-text);
+  margin: 0 0 var(--space-xs);
+}
+
+.survey__step-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-lg);
+}
+
+/* ── Chips (Genres / Platforms) ── */
+
+.survey__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.survey__chip {
+  padding: var(--space-sm) var(--space-lg);
+  border: 2px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.survey__chip:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.survey__chip--selected {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+/* ── Play Styles ── */
+
+.survey__styles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.survey__style {
+  padding: var(--space-md) var(--space-lg);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.survey__style:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.survey__style--selected {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+/* ── Navigation ── */
+
+.survey__nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-2xl);
+}
+
+.survey__btn {
+  padding: var(--space-sm) var(--space-xl);
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.survey__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.survey__btn--back {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.survey__btn--back:hover {
+  background: #e8e8f2;
+}
+
+.survey__btn--next {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.survey__btn--next:hover {
+  background: #6cc048;
+}
+
+.survey__btn--submit {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.survey__btn--submit:hover {
+  background: #6cc048;
+}
+
+/* ═══════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .survey__inner {
+    padding: var(--space-lg) var(--space-md);
+  }
+
+  .survey__title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .survey__card {
+    padding: var(--space-lg);
+  }
+
+  .survey__nav {
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .survey__btn {
+    width: 100%;
+    text-align: center;
+  }
+}

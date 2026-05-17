@@ -1,0 +1,166 @@
+/* ═══════════════════════════════════════════
+   GameCard — Figma UI Redesign
+   ═══════════════════════════════════════════ */
+
+.game-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.game-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: transform 0.25s ease-in-out, box-shadow 0.25s ease-in-out;
+  box-shadow: var(--shadow-sm);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.game-card:hover {
+  transform: scale(1.02);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ── Cover (16:9) ── */
+.game-card__cover {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.game-card__cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.game-card__fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary),
+    var(--color-accent)
+  );
+  font-size: 2rem;
+  font-weight: bold;
+  color: #fff;
+  font-family: var(--font-display);
+}
+
+/* ── Tier Badge (overlay) ── */
+.game-card__tier {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  font-weight: bold;
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── Info ── */
+.game-card__info {
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  flex: 1;
+}
+
+.game-card__title {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.game-card__rating {
+  font-size: var(--font-size-sm);
+  color: #f39c12;
+}
+
+.game-card__rating-value {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  margin-left: 4px;
+}
+
+.game-card__description {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  line-height: 1.4;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.game-card__genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.game-card__genre {
+  background: var(--color-surface);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.game-card__platforms {
+  display: flex;
+  gap: var(--space-xs);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.game-card__platform-icon {
+  font-size: var(--font-size-base);
+}
+
+/* ── Meta (comments / favorites) ── */
+.game-card__meta {
+  display: flex;
+  gap: var(--space-md);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-top: auto;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-border);
+}
+
+.game-card__meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── Responsive tweaks ── */
+@media (max-width: 576px) {
+  .game-card__info {
+    padding: var(--space-sm);
+  }
+}

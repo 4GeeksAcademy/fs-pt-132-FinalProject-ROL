@@ -56,8 +56,8 @@ class Game(db.Model):
     developer: Mapped[str] = mapped_column(String(100), nullable=False)
     publisher: Mapped[str] = mapped_column(String(100), nullable=False)
     cover_img_url: Mapped[str] = mapped_column(String(255), nullable=False)
-    genres: Mapped[List[str]] = mapped_column(ARRAY(String(40)), nullable=False)
-    platforms: Mapped[List[str]] = mapped_column(ARRAY(String(30)), nullable=False)
+    genres: Mapped[list] = mapped_column(JSON, nullable=False)
+    platforms: Mapped[list] = mapped_column(JSON, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
     # Relaciones
@@ -90,6 +90,8 @@ class Game(db.Model):
             "cover_img_url": self.cover_img_url,
             "genres": self.genres,
             "platforms": self.platforms,
+            "average_rating": self.game_tier.average_rating if self.game_tier else None,
+            "tier": self.game_tier.tier if self.game_tier else None,
             "created_at": self.created_at.isoformat(),
             "game_tier": self.game_tier.serialize() if self.game_tier else None,
             "comment_count": len(self.comments),
@@ -119,10 +121,10 @@ class UserSurvey(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('user.id'), nullable=False)
     game_id: Mapped[int] = mapped_column(ForeignKey('game.id'), nullable=False)
-    genres: Mapped[List[str]] = mapped_column(ARRAY(String(60)), nullable=False)
-    platforms: Mapped[List[str]] = mapped_column(ARRAY(String(35)), nullable=False)
+    genres: Mapped[list] = mapped_column(JSON, nullable=False)
+    platforms: Mapped[list] = mapped_column(JSON, nullable=False)
     play_style: Mapped[str] = mapped_column(String(20), nullable=False)
-    favorite_themes: Mapped[List[str]] = mapped_column(ARRAY(String(50)), nullable=False)
+    favorite_themes: Mapped[list] = mapped_column(JSON, nullable=False)
     completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     # Relaciones
@@ -262,6 +264,7 @@ class UserGameTier(db.Model):
             "game_tier_id": self.game_tier_id,
             "user_id": self.user_id,
             "username": self.user.username if self.user else None,
+            "rating": self.rating,
         }
 
 
