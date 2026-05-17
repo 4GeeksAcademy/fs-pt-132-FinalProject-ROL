@@ -1,21 +1,22 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import useGlobalReducer from "../../hooks/useGlobalReducer.jsx";
+import "./Profile.css";
 
 const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
 
 const STATUS_LABELS = {
-  want_to_play: "Quiero jugar",
   playing: "Jugando",
   completed: "Completado",
+  want_to_play: "Pendiente",
   dropped: "Abandonado",
 };
 
-const STATUS_BADGES = {
-  want_to_play: "bg-primary",
-  playing: "bg-success",
-  completed: "bg-warning text-dark",
-  dropped: "bg-danger",
+const STATUS_COLORS = {
+  playing: "#7DD750",
+  completed: "#AC4FD6",
+  want_to_play: "#D64F82",
+  dropped: "#574B50",
 };
 
 export const Profile = () => {
@@ -23,6 +24,8 @@ export const Profile = () => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [filterStatus, setFilterStatus] = useState(null);
 
   useEffect(() => {
     if (!store.user?.id) {
@@ -31,12 +34,15 @@ export const Profile = () => {
       return;
     }
 
+    const token = store.token;
+    const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+
     Promise.all([
       fetch(`${VITE_BACKEND_URL}/api/users/${store.user.id}`, {
-        headers: { Authorization: `Bearer ${store.token}` },
+        headers: authHeaders,
       }),
       fetch(`${VITE_BACKEND_URL}/api/user/game-list`, {
-        headers: { Authorization: `Bearer ${store.token}` },
+        headers: authHeaders,
       }),
     ])
       .then(async ([userRes, listRes]) => {
@@ -44,14 +50,14 @@ export const Profile = () => {
         const userData = await userRes.json();
         const user = userData.user || userData;
 
-        let games = [];
+        let allGames = [];
         if (listRes.ok) {
           const listData = await listRes.json();
           const list = listData.entry || listData;
-          games = list.games || [];
+          allGames = list.games || [];
         }
 
-        setUserData({ ...user, games });
+        setUserData({ ...user, games: allGames });
         setLoading(false);
       })
       .catch((err) => {
@@ -60,19 +66,6 @@ export const Profile = () => {
       });
   }, [store.user?.id, store.token]);
 
-  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
-  const userGames = userData?.games || [];
-  const favCount = userGames.filter((g) => g.is_favorite).length;
-  const stats = {
-    total: userGames.length,
-    comments: userData?.comment_count ?? 0,
-    favorites: favCount,
-  };
-  const displayedGames = showFavoritesOnly
-    ? userGames.filter((g) => g.is_favorite)
-    : userGames;
-
-  // ═══════════════ LOADING ═══════════════
   if (loading) {
     return (
       <div className="container py-5 text-center">
@@ -83,7 +76,6 @@ export const Profile = () => {
     );
   }
 
-  // ═══════════════ ERROR ═══════════════
   if (error) {
     return (
       <div className="container py-5">
@@ -103,130 +95,190 @@ export const Profile = () => {
   }
 
   const user = userData || store.user;
+  const allGames = userData?.games || [];
 
-  return (
-    <div className="container py-4">
-      {/* ═══ Profile Header ═══ */}
-      <div className="row mb-4">
-        <div className="col-12">
-          <div className="card shadow-sm">
-            <div className="card-body d-flex align-items-center gap-4 p-4">
-              <div
-                className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
-                style={{ width: "64px", height: "64px", fontSize: "1.5rem", fontWeight: "bold" }}
+  const nowPlaying = allGames.filter((g) => g.status === "playing");
+  const completed = allGames.filter((g) => g.status === "completed");
+  const pending = allGames.filter((g) => g.status === "want_to_play");
+  const dropped = allGames.filter((g) => g.status === "dropped");
+  const favorites = allGames.filter((g) => g.is_favorite);
+
+  let displayedGames = allGames;
+  if (showFavoritesOnly) displayedGames = favorites;
+  else if (filterStatus) displayedGames = allGames.filter((g) => g.status === filterStatus);
+
+  const GameCard = ({ entry }) => {
+    const game = entry.game || entry;
+    const status = entry.status;
+    const genre = Array.isArray(game.genres) ? game.genres[0] : game.genres || game.genre || "";
+    const rating = game.average_rating || game.rating;
+    const userCount = game.favorite_count || game.user_count || "";
+
+    return (
+      <Link to={`/game-detail/${game.id}`} className="text-decoration-none">
+        <div className="profile-game-card">
+          <div className="profile-game-card__cover">
+            {game.cover_img_url ? (
+              <img src={game.cover_img_url} alt={game.title} />
+            ) : (
+              <div className="profile-game-card__fallback">
+                {game.title?.slice(0, 2).toUpperCase() || "??"}
+              </div>
+            )}
+            {status && (
+              <span
+                className="profile-game-card__status"
+                style={{ backgroundColor: STATUS_COLORS[status] || "#999" }}
               >
-                {user?.username?.charAt(0).toUpperCase() || "?"}
-              </div>
-              <div>
-                <h1 className="h4 mb-1">{user?.username || "Usuario"}</h1>
-                <p className="text-muted mb-0">{user?.email || ""}</p>
-              </div>
-            </div>
+                {STATUS_LABELS[status] || status}
+              </span>
+            )}
+            {entry.is_favorite && (
+              <span className="profile-game-card__fav">★</span>
+            )}
+          </div>
+          <div className="profile-game-card__info">
+            <h4 className="profile-game-card__title">{game.title}</h4>
+            <p className="profile-game-card__genre">{genre || ""}</p>
+            <p className="profile-game-card__rating">
+              ★ {Number(rating || 0).toFixed(1)}
+              {userCount ? ` | U: ${userCount}` : ""}
+            </p>
           </div>
         </div>
-      </div>
+      </Link>
+    );
+  };
 
-      {/* ═══ Stats ═══ */}
-      <div className="row g-3 mb-4">
-        <div className="col-md-4">
-          <div className="card text-center shadow-sm">
-            <div className="card-body">
-              <h3 className="text-primary mb-1">{stats.total}</h3>
-              <span className="text-muted">Juegos</span>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-4">
-          <div className="card text-center shadow-sm">
-            <div className="card-body">
-              <h3 className="text-primary mb-1">{stats.comments}</h3>
-              <span className="text-muted">Comentarios</span>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-4">
-          <div className="card text-center shadow-sm">
-            <div className="card-body">
-              <h3 className="text-primary mb-1">{stats.favorites}</h3>
-              <span className="text-muted">Favoritos</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ═══ Game List ═══ */}
-      <div className="card shadow-sm">
-        <div className="card-header d-flex justify-content-between align-items-center">
-          <h2 className="h5 mb-0">
-            {showFavoritesOnly ? "Favoritos" : "Mis Juegos"}
-          </h2>
-          {favCount > 0 && (
-            <button
-              className={`btn btn-sm ${showFavoritesOnly ? "btn-primary" : "btn-outline-primary"}`}
-              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-            >
-              {showFavoritesOnly ? "Ver todos" : `★ Favoritos (${favCount})`}
-            </button>
+  const SectionRow = ({ title, games, emptyMsg, linkTo = null }) => {
+    if (games.length === 0 && !emptyMsg) return null;
+    return (
+      <div className="profile-section">
+        <div className="profile-section__header">
+          <h3 className="profile-section__title">{title}</h3>
+          {linkTo && (
+            <Link to={linkTo} className="profile-section__link">
+              Ver todo →
+            </Link>
           )}
         </div>
-        <div className="card-body">
-          {displayedGames.length === 0 ? (
-            <div className="text-center py-4">
-              <p className="text-muted mb-3">
-                No tienes juegos registrados a\u00fan.
-              </p>
-              <Link to="/" className="btn btn-outline-primary">
-                Explorar juegos
-              </Link>
-            </div>
-          ) : (
-            <div className="row g-3">
-                {displayedGames.map((entry) => {
-                const game = entry.game || entry;
-                const status = entry.status || entry.user_status;
+        {games.length === 0 ? (
+          <p className="profile-section__empty">{emptyMsg}</p>
+        ) : (
+          <div className="profile-section__scroll">
+            {games.map((entry, i) => (
+              <GameCard key={entry.id || entry.game?.id || i} entry={entry} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="profile">
+      <div className="profile__inner">
+        {/* ═══ Profile Header ═══ */}
+        <div className="profile-header">
+          <div className="profile-header__avatar">
+            {user?.username?.charAt(0).toUpperCase() || "?"}
+          </div>
+          <div className="profile-header__info">
+            <h1 className="profile-header__name">{user?.username || "Usuario"}</h1>
+            <p className="profile-header__tag">top tier player</p>
+          </div>
+        </div>
+
+        {/* ═══ Stats Counters ═══ */}
+        <div className="profile-stats">
+          <div className="profile-stat">
+            <span className="profile-stat__value">{allGames.length}</span>
+            <span className="profile-stat__label">Juegos</span>
+          </div>
+          <div className="profile-stat">
+            <span className="profile-stat__value">{completed.length}</span>
+            <span className="profile-stat__label">Completados</span>
+          </div>
+          <div className="profile-stat">
+            <span className="profile-stat__value">{pending.length}</span>
+            <span className="profile-stat__label">Pendientes</span>
+          </div>
+          <div className="profile-stat">
+            <span className="profile-stat__value">{favorites.length}</span>
+            <span className="profile-stat__label">Favoritos</span>
+          </div>
+        </div>
+
+        {/* ═══ Now Playing ═══ */}
+        <SectionRow
+          title="Jugando actualmente"
+          games={nowPlaying}
+          emptyMsg="No hay juegos en progreso."
+        />
+
+        {/* ═══ Favorites ═══ */}
+        <SectionRow
+          title="Juegos favoritos"
+          games={favorites}
+          emptyMsg="No tienes juegos favoritos todavía."
+        />
+
+        {/* ═══ Mi Biblioteca ═══ */}
+        <div className="profile-section">
+          <div className="profile-section__header">
+            <h3 className="profile-section__title">Mi Biblioteca</h3>
+            <div className="profile-library__filters">
+              {["all", "completed", "playing", "want_to_play", "dropped"].map((key) => {
+                const label =
+                  key === "all"
+                    ? "Todos"
+                    : STATUS_LABELS[key] || key;
+                const count =
+                  key === "all"
+                    ? allGames.length
+                    : key === "completed"
+                    ? completed.length
+                    : key === "playing"
+                    ? nowPlaying.length
+                    : key === "want_to_play"
+                    ? pending.length
+                    : dropped.length;
                 return (
-                  <div key={game.id || entry.id} className="col-md-6 col-lg-4">
-                    <div className="card h-100 shadow-sm">
-                      <Link to={`/game-detail/${game.id}`} className="text-decoration-none">
-                        <div
-                          className="card-img-top d-flex align-items-center justify-content-center bg-light"
-                          style={{ height: "160px", overflow: "hidden" }}
-                        >
-                          <img
-                            src={game.cover_img_url}
-                            alt={game.title}
-                            className="img-fluid"
-                            style={{ objectFit: "cover", height: "100%", width: "100%" }}
-                            onError={(e) => {
-                              e.target.style.display = "none";
-                              e.target.nextSibling.style.display = "flex";
-                            }}
-                          />
-                          <span
-                            className="text-muted d-none"
-                            style={{ fontSize: "2rem", fontWeight: "bold" }}
-                          >
-                            {game.title?.slice(0, 2).toUpperCase() || "??"}
-                          </span>
-                        </div>
-                      </Link>
-                      <div className="card-body">
-                        <Link
-                          to={`/game-detail/${game.id}`}
-                          className="text-decoration-none text-dark"
-                        >
-                          <h5 className="card-title">{game.title}</h5>
-                        </Link>
-                        {status && (
-                          <span className={`badge ${STATUS_BADGES[status] || "bg-secondary"}`}>
-                            {STATUS_LABELS[status] || status}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                  <button
+                    key={key}
+                    className={`profile-library__filter ${filterStatus === key || (key === "all" && !filterStatus && !showFavoritesOnly) ? "profile-library__filter--active" : ""}`}
+                    onClick={() => {
+                      setFilterStatus(key === "all" ? null : key);
+                      setShowFavoritesOnly(false);
+                    }}
+                  >
+                    {label} ({count})
+                  </button>
                 );
               })}
+              {favorites.length > 0 && (
+                <button
+                  className={`profile-library__filter ${showFavoritesOnly ? "profile-library__filter--active" : ""}`}
+                  onClick={() => {
+                    setShowFavoritesOnly(true);
+                    setFilterStatus(null);
+                  }}
+                >
+                  ★ Favoritos ({favorites.length})
+                </button>
+              )}
+            </div>
+          </div>
+
+          {displayedGames.length === 0 ? (
+            <p className="profile-section__empty">
+              No tienes juegos registrados aún.
+            </p>
+          ) : (
+            <div className="profile-library__grid">
+              {displayedGames.map((entry, i) => (
+                <GameCard key={entry.id || entry.game?.id || i} entry={entry} />
+              ))}
             </div>
           )}
         </div>

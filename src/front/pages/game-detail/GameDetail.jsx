@@ -45,6 +45,8 @@ export const GameDetail = () => {
   const [userRating, setUserRating] = useState(0);
   const [ratingLoading, setRatingLoading] = useState(false);
   const [userVoteId, setUserVoteId] = useState(null);
+  const [userGameEntry, setUserGameEntry] = useState(null); // { id, status } from UserGLG
+  const [statusUpdating, setStatusUpdating] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -60,8 +62,11 @@ export const GameDetail = () => {
       fetch(`${VITE_BACKEND_URL}/api/user/game-tiers`, {
         headers: authHeaders,
       }),
+      fetch(`${VITE_BACKEND_URL}/api/user/game-list`, {
+        headers: authHeaders,
+      }),
     ])
-      .then(async ([gameRes, favRes, voteRes]) => {
+      .then(async ([gameRes, favRes, voteRes, listRes]) => {
         if (!gameRes.ok) throw new Error(`Error ${gameRes.status}`);
         const gameData = await gameRes.json();
         setGame(gameData);
@@ -83,6 +88,19 @@ export const GameDetail = () => {
               setUserRating(myVote.rating);
               setUserVoteId(myVote.id);
             }
+          }
+        }
+
+        // Check if game is in user's list
+        if (listRes.ok) {
+          const listData = await listRes.json();
+          const gameEntry = (listData.games || []).find(
+            (g) => g.game?.id === parseInt(id)
+          );
+          if (gameEntry) {
+            setUserGameEntry({ id: gameEntry.id, status: gameEntry.status });
+          } else {
+            setUserGameEntry(null);
           }
         }
 
@@ -224,6 +242,55 @@ export const GameDetail = () => {
         </span>
       </div>
     );
+  };
+
+  const handleAddToList = async (status = "want_to_play") => {
+    setStatusUpdating(true);
+    try {
+      const token = sessionStorage.getItem("token");
+      const res = await fetch(`${VITE_BACKEND_URL}/api/user/glg`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ game_id: parseInt(id), status }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUserGameEntry({ id: data.entry?.id, status });
+      }
+    } catch (err) {
+      console.error("Error adding game to list:", err);
+    } finally {
+      setStatusUpdating(false);
+    }
+  };
+
+  const handleChangeStatus = async (newStatus) => {
+    if (!userGameEntry?.id) return;
+    setStatusUpdating(true);
+    try {
+      const token = sessionStorage.getItem("token");
+      const res = await fetch(
+        `${VITE_BACKEND_URL}/api/user/games/${userGameEntry.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
+      if (res.ok) {
+        setUserGameEntry((prev) => ({ ...prev, status: newStatus }));
+      }
+    } catch (err) {
+      console.error("Error updating status:", err);
+    } finally {
+      setStatusUpdating(false);
+    }
   };
 
   const formatDate = (dateStr) => {
@@ -400,6 +467,38 @@ export const GameDetail = () => {
                 </li>
               ))}
             </ul>
+          </div>
+
+          {/* ── Status Selector ── */}
+          <div className="game-detail__status-section">
+            <span className="game-detail__status-label">Estado:</span>
+            {userGameEntry ? (
+              <div className="game-detail__status-btns">
+                {[
+                  { key: "want_to_play", label: "Pendiente" },
+                  { key: "playing", label: "Jugando" },
+                  { key: "completed", label: "Completado" },
+                  { key: "dropped", label: "Abandonado" },
+                ].map((opt) => (
+                  <button
+                    key={opt.key}
+                    className={`game-detail__status-btn ${userGameEntry.status === opt.key ? "game-detail__status-btn--active" : ""}`}
+                    onClick={() => handleChangeStatus(opt.key)}
+                    disabled={statusUpdating}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <button
+                className="game-detail__add-btn"
+                onClick={() => handleAddToList("want_to_play")}
+                disabled={statusUpdating}
+              >
+                + Añadir a mi biblioteca
+              </button>
+            )}
           </div>
 
           {/* ── Stats ── */}

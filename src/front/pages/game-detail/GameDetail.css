@@ -263,6 +263,96 @@
   font-weight: 700;
 }
 
+/* ── Status Selector ── */
+
+.game-detail__status-section {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.game-detail__status-label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.game-detail__status-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.game-detail__status-btn {
+  padding: 4px 14px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  font-family: var(--font-body);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.game-detail__status-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.game-detail__status-btn--active {
+  color: #fff;
+  font-weight: 700;
+}
+
+.game-detail__status-btn--active:nth-child(1) {
+  background: var(--color-secondary);
+  border-color: var(--color-secondary);
+} /* Pendiente = D64F82 */
+.game-detail__status-btn--active:nth-child(2) {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+} /* Jugando = 7DD750 */
+.game-detail__status-btn--active:nth-child(3) {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+} /* Completado = AC4FD6 */
+.game-detail__status-btn--active:nth-child(4) {
+  background: #574B50;
+  border-color: #574B50;
+} /* Abandonado = 574B50 */
+
+.game-detail__status-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.game-detail__add-btn {
+  padding: 6px 18px;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  font-family: var(--font-body);
+  background: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.game-detail__add-btn:hover {
+  background: #6cc048;
+}
+
+.game-detail__add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ── Stats ── */
 
 .game-detail__stats {

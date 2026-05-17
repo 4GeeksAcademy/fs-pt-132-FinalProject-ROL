@@ -51,11 +51,11 @@ def handle_signup():
     email = body.get("email")
     password = body.get("password")
     
-    username_empty = len(username.strip()) < 5
+    username_empty = len(username.strip()) < 4
     email_empty = len(email.strip()) < 5
     password_empty = len(password.strip()) < 5
     if username_empty or email_empty or password_empty:
-        return jsonify({"msg": "Usermane, email and password must be at least five characters"}), 400
+        return jsonify({"msg": "Username must be at least 4, email and password at least 5 characters"}), 400
 
     # Revisamos si el usuario ya existe en la base de datos
     email_exists = db.session.execute(select(User).where(
@@ -100,10 +100,10 @@ def handle_login():
     username = body.get("username")
     web_password = body.get("password")
 
-    username_empty = len(username.strip()) < 5
+    username_empty = len(username.strip()) < 4
     password_empty = len(web_password.strip()) < 5
     if username_empty or password_empty:
-        return jsonify({"msg": "Username, email and password must be at least five characters"}), 400
+        return jsonify({"msg": "Username must be at least 4, password at least 5 characters"}), 400
 
     # Filtrar usuario por nombre
     query = select(User).where(User.username == username)
