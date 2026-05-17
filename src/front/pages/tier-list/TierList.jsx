@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import "./TierList.css";
 
-const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
 
 const TIER_ORDER = { S: 0, A: 1, B: 2, C: 3, D: 4, F: 5, Undefined: 6 };
 

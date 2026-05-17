@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import useGlobalReducer from "../../hooks/useGlobalReducer.jsx";
 
-const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
 
 const STATUS_LABELS = {
   want_to_play: "Quiero jugar",

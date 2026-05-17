@@ -5,7 +5,7 @@ import useGlobalReducer from "../hooks/useGlobalReducer.jsx";
 // ─── Link para navegación interna ───
 import { Link } from "react-router-dom";
 
-const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
 
 export const Home = () => {
   const { store, dispatch } = useGlobalReducer();
@@ -17,9 +17,6 @@ export const Home = () => {
     setLoading(true);
     setError(null);
     try {
-      if (!VITE_BACKEND_URL)
-        throw new Error("VITE_BACKEND_URL is not defined in .env file");
-
       const response = await fetch(`${VITE_BACKEND_URL}/api/games`);
 
       if (!response.ok)
