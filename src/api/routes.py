@@ -13,7 +13,7 @@ from sqlalchemy import select
 api = Blueprint('api', __name__)
 
 # Allow CORS requests to this API
-CORS(api)
+CORS(api, origins="*", supports_credentials=True)
 
 from api.api_routes.admins import *
 from api.api_routes.comments import *

@@ -7,6 +7,10 @@ import {
 } from "react-router-dom";
 import { Layout } from "./pages/Layout";
 import { Home } from "./pages/Home";
+import { Login } from "./pages/Auth/Login";
+import { Signup } from "./pages/Auth/Signup";
+import { Profile } from "./pages/User/Profile";
+import { RequireAuth } from "./components/RequireAuth";
 
 
 export const router = createBrowserRouter(
@@ -19,6 +23,14 @@ export const router = createBrowserRouter(
 
       // Root Route: All navigation will start from here.
       <Route path="/" element={<Layout />} errorElement={<h1>Not found!</h1>} >
+      {/* Rutas de auth*/}
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+
+      {/* Ruta protegida (solo si está logueado)*/}
+      <Route element={<RequireAuth />}>
+        <Route path="/profile" element={<Profile />} />
+      </Route>
 
         {/* Nested Routes: Defines sub-routes within the BaseHome component. */}
         <Route path= "/" element={<Home />} />
